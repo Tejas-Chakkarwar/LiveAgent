@@ -1,0 +1,231 @@
+decompose_task:
+  description: >
+    Analyze the incoming feature request: "{user_input}".
+    
+    CRITICAL: Determine which tasks are ACTUALLY NEEDED:
+    
+    1. **Frontend Task** - ONLY include this if the user request requires:
+       - A user interface (UI)
+       - Web pages, components, or visual elements
+       - User-facing features that need a frontend
+       - Client-side interaction
+    
+    2. **Backend Task** - ONLY include this if the user request requires:
+       - Server-side logic
+       - APIs or REST endpoints
+       - Database operations
+       - Backend services
+       - Server processing
+    
+    3. **QA Requirements** - ALWAYS include this for validation
+    
+    EXAMPLES:
+    - "Create a static landing page" → Frontend Task + QA Requirements (NO Backend Task)
+    - "Build a REST API for user management" → Backend Task + QA Requirements (NO Frontend Task)
+    - "Create a todo app with API" → Frontend Task + Backend Task + QA Requirements
+    - "Make a calculator component" → Frontend Task + QA Requirements (NO Backend Task)
+    
+    For each task that IS needed, create clear, separate instructions:
+    - Frontend Agent (if needed): specific UI/UX tasks, components to build, user interactions, folder structure
+    - Backend Agent (if needed): specific API endpoints, data models, security requirements, business logic, folder structure
+    - QA Agent (always): specific test requirements and validation criteria
+    
+    Be extremely specific and detailed in your decomposition so each agent knows exactly what to build.
+    Specify the folder structure that should be created (e.g., frontend/components/, backend/routes/, etc.).
+    
+    IMPORTANT: If a task is NOT needed, simply omit that section entirely. Do NOT create empty or placeholder sections.
+  expected_output: >
+    A structured decomposition in the following format:
+    
+    [Include ONLY the sections that are needed]
+    
+    ## Frontend Task
+    [ONLY include if frontend is needed - Detailed instructions for frontend development including:
+    - Specific components to build
+    - User flows and UI requirements
+    - Folder structure (e.g., components/, pages/, styles/)
+    - File organization and naming conventions]
+    
+    ## Backend Task  
+    [ONLY include if backend is needed - Detailed instructions for backend development including:
+    - API endpoints with exact paths and methods
+    - Data models and database schemas
+    - Security requirements (authentication, validation, etc.)
+    - Business logic
+    - Folder structure (e.g., routes/, models/, services/)
+    - Dependencies and requirements]
+    
+    ## QA Requirements
+    [ALWAYS include - Specific test cases and validation criteria including:
+    - Unit tests
+    - Integration tests
+    - End-to-end test scenarios
+    - Expected behaviors and edge cases]
+    
+    Each section must be detailed enough for the respective agent to implement without ambiguity.
+    If Frontend Task or Backend Task is not needed, do not include that section at all.
+  agent: orchestrator_agent
+  allow_delegation: True
+  output_file: outputs/decomposition_output.md
+
+# Frontend task, delegated by the orchestrator
+frontend_coding_task:
+  description: >
+    Review the decomposition provided by the orchestrator in the context.
+    
+    CRITICAL: Check if the decomposition contains a "## Frontend Task" section.
+    
+    If NO "## Frontend Task" section exists in the decomposition:
+    - This means the user request does not require frontend work
+    - Do NOT create any files
+    - Output a message in frontend_output.md stating: "No frontend work required for this request."
+    - Skip all file creation steps
+    
+    If a "## Frontend Task" section EXISTS:
+    - Extract the "## Frontend Task" section from the orchestrator's decomposition output
+    - Your task is to implement EXACTLY what the orchestrator specified in the Frontend Task section
+    - Do NOT use the original user_input directly - only use the specific frontend instructions from the decomposition
+    
+    CRITICAL INSTRUCTIONS FOR FILE CREATION:
+    You have access to a 'create_file' tool that you MUST use to create actual code files.
+    
+    1. You MUST use the create_file tool to create a folder structure in outputs/frontend/ directory
+    2. For each file you need to create, use the create_file tool with:
+       - file_path: relative path from outputs/ (e.g., 'frontend/components/App.jsx')
+       - content: the complete file content
+    3. Create the exact folder structure specified in the decomposition (e.g., frontend/components/, frontend/pages/, frontend/styles/, etc.)
+    4. Create ACTUAL code files (.js, .jsx, .ts, .tsx, .css, .html) with real, working code
+    5. DO NOT just write code descriptions in markdown - you MUST use the create_file tool to create actual executable files
+    6. Each file must contain complete, functional code that can be directly used
+    7. Call the create_file tool for EVERY file that needs to be created
+    8. Ensure the component is wired up to submit data to the API path specified in the orchestrator's decomposition
+    
+    If the decomposition mentions specific API endpoints or backend requirements, coordinate with those specifications.
+    
+    Example folder structure you should create:
+    outputs/frontend/
+      components/
+        ComponentName.jsx
+        ComponentName.css
+      pages/
+        PageName.jsx
+      styles/
+        global.css
+      README.md
+    
+    Create all files with proper code, not just descriptions.
+  expected_output: >
+    A summary in outputs/frontend_output.md describing:
+    1. The folder structure created in outputs/frontend/
+    2. List of all files created with their paths
+    3. Brief description of what each file does
+    4. How to run/use the frontend code
+    
+    NOTE: The actual code files should be created in outputs/frontend/ directory with proper folder structure.
+    The output_file (frontend_output.md) is just a summary - the actual implementation must be in outputs/frontend/.
+  agent: frontend_agent
+  context:
+    - decompose_task
+  async_execution: True # Can run in parallel with the backend task
+  output_file: outputs/frontend_output.md
+  allow_delegation: False
+
+# Backend task, delegated by the orchestrator
+backend_coding_task:
+  description: >
+    Review the decomposition provided by the orchestrator in the context.
+    
+    CRITICAL: Check if the decomposition contains a "## Backend Task" section.
+    
+    If NO "## Backend Task" section exists in the decomposition:
+    - This means the user request does not require backend work
+    - Do NOT create any files
+    - Output a message in backend_output.md stating: "No backend work required for this request."
+    - Skip all file creation steps
+    
+    If a "## Backend Task" section EXISTS:
+    - Extract the "## Backend Task" section from the orchestrator's decomposition output
+    - Your task is to implement EXACTLY what the orchestrator specified in the Backend Task section
+    - Do NOT use the original user_input directly - only use the specific backend instructions from the decomposition
+    
+    CRITICAL INSTRUCTIONS FOR FILE CREATION:
+    You have access to a 'create_file' tool that you MUST use to create actual code files.
+    
+    1. You MUST use the create_file tool to create a folder structure in outputs/backend/ directory
+    2. For each file you need to create, use the create_file tool with:
+       - file_path: relative path from outputs/ (e.g., 'backend/routes/api.py')
+       - content: the complete file content
+    3. Create the exact folder structure specified in the decomposition (e.g., backend/routes/, backend/models/, backend/services/, etc.)
+    4. Create ACTUAL code files (.py, requirements.txt, etc.) with real, working code
+    5. DO NOT just write code descriptions in markdown - you MUST use the create_file tool to create actual executable files
+    6. Each file must contain complete, functional code that can be directly run
+    7. Call the create_file tool for EVERY file that needs to be created
+    8. Implement the exact API endpoints, data models, security requirements (like password hashing),
+       input validation, and business logic as specified by the orchestrator
+    9. The endpoints MUST be functional and ready to accept the payload format specified in the decomposition
+    
+    Ensure your implementation matches the API contract that the frontend agent will be using.
+    
+    Example folder structure you should create:
+    outputs/backend/
+      routes/
+        api.py
+      models/
+        user.py
+      services/
+        auth.py
+      requirements.txt
+      README.md
+      app.py (or main.py)
+    
+    Create all files with proper code, not just descriptions.
+  expected_output: >
+    A summary in outputs/backend_output.md describing:
+    1. The folder structure created in outputs/backend/
+    2. List of all files created with their paths
+    3. Brief description of what each file does
+    4. API endpoints with paths, methods, request/response formats
+    5. How to run/install the backend code
+    6. Dependencies and requirements
+    
+    NOTE: The actual code files should be created in outputs/backend/ directory with proper folder structure.
+    The output_file (backend_output.md) is just a summary - the actual implementation must be in outputs/backend/.
+  agent: backend_agent
+  context:
+    - decompose_task
+  async_execution: True # Can run in parallel with the frontend task
+  output_file: outputs/backend_output.md
+  allow_delegation: False
+
+# Final QA task, always runs last and depends on coding tasks
+final_qa_validation_task:
+  description: >
+    Review the decomposition provided by the orchestrator to understand the QA requirements.
+    Extract the "## QA Requirements" section from the orchestrator's decomposition output.
+    
+    Analyze the code outputs from the tasks that were actually executed:
+    - Check if 'frontend_coding_task' was executed (look for frontend_output.md and outputs/frontend/ directory)
+    - Check if 'backend_coding_task' was executed (look for backend_output.md and outputs/backend/ directory)
+    
+    Your goal is to verify that:
+    1. The orchestrator's specific QA requirements (from the decomposition) have been met
+    2. The original user requirement ("{user_input}") has been fully satisfied
+    3. If both frontend and backend were created, verify they are properly integrated
+    4. If only frontend was created, verify it meets the requirements without backend
+    5. If only backend was created, verify it meets the requirements without frontend
+    
+    Use the QA requirements from the decomposition as your primary test criteria.
+    If the code fails, identify the failure point (Frontend logic error, Backend bug, integration issue, or missing requirement)
+    and output a structured failure report.
+  expected_output: >
+    A final verdict: 'PASS' or 'FAIL' followed by a detailed, technical explanation.
+    Reference both the orchestrator's QA requirements and the original user requirement in your assessment.
+    Example PASS: "PASS: The registration flow is complete. Password hashed correctly and UI state management works."
+    Example FAIL: "FAIL: The frontend button calls '/submit', but the backend endpoint is '/save'. This is a dependency failure."
+  agent: qa_tester_agent
+  context:
+    - frontend_coding_task
+    - backend_coding_task
+    - decompose_task
+  output_file: outputs/qa_validation_output.md
+  allow_delegation: False
